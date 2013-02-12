@@ -26,7 +26,8 @@ setup(
         "python-cloudfiles",
         "python-gflags",
         "unittest2",
-        ]
+        ],
+    scripts = ["scripts/wnyc_backup_upload",]
 )
 
 
