@@ -56,11 +56,15 @@ def kill_now(i, now=None, now_func=lambda :None):
     now = now or now_func() or datetime.now()
     if isinstance(now, datetime):
         now = now.date()
-    return kill_date(i) < now
+    if kill_date(i) < now:
+        return kill_date(i)
+    return None
 
 class FilenameRewriter:
     def __init__(self):
-        self.now = "%06x" % date.today().toordinal()
+        today = date.today()
+        self.now = "%06x" % today.toordinal()
+        self.kill_date = kill_date(today)
 
     def __call__(self, s):
         return os.path.join(self.now, os.path.basename(s))
@@ -94,10 +98,43 @@ def upload():
 
     for source in argv:
         target = rewrite_name(source)
-        print >>sys.stderr, "Uploading", source, "to", target
+        print >>sys.stderr, "Uploading", source, "to", target, "expires on", rewrite_name.kill_date
         try:
             container.create_object(target).load_from_filename(source)
         except IOError, e:
             print >>sys.stderr,  e
     
         
+def cull():
+    import sys
+    
+    try:
+        argv = FLAGS(sys.argv)[1:]
+    except gflags.FlagsError, e:
+        print e 
+        print __doc__
+        sys.exit(1)
+
+    if not FLAGS.account:
+        print >>sys.stderr, "Missing --account flag"
+    if not FLAGS.key:
+        print >>sys.stderr, "Missing --key flags"
+    if not FLAGS.container:
+        print >>sys.stderr, "Missing --container flags" 
+
+    rewrite_name = FilenameRewriter()
+
+    connection = get_connection(FLAGS.account, FLAGS.key)
+    try:
+        container = connection.get_container(FLAGS.container)
+    except cloudfiles.errors.NoSuchContainer:
+        container = connection.create_container(FLAGS.container)
+
+    today = date.today()
+
+    for obj in container.get_objects():
+        name = obj.name
+        kill_date = kill_now(int(name.split('/', 1)[0], 16), now=today)
+        if kill_date:
+            print >>sys.stderr, name, "expired on", kill_date
+            container.delete_object(obj)

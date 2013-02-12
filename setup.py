@@ -27,7 +27,10 @@ setup(
         "python-gflags",
         "unittest2",
         ],
-    scripts = ["scripts/wnyc_backup_upload",]
+    scripts = [
+        "scripts/wnyc_backup_cull",
+        "scripts/wnyc_backup_upload",
+        ]
 )
 
 
