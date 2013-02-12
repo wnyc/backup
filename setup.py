@@ -22,9 +22,10 @@ setup(
     include_package_data=True,
     url = "http://github.com/wnyc/wnyc_backup",
     install_requires = [
-        "python-gflags",
+        "boto",
         "python-cloudfiles",
-        "boto"
+        "python-gflags",
+        "unittest2",
         ]
 )
 
