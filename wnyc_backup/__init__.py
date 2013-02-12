@@ -50,7 +50,7 @@ def kill_date(i):
     """
     if isinstance(i, (datetime, date)):
         i = i.toordinal()
-    return date.fromordinal(i + 2**count_right_zero_bits(i))
+    return date.fromordinal(i + 2**(1+count_right_zero_bits(i)))
 
 def kill_now(i, now=None, now_func=lambda :None):
     now = now or now_func() or datetime.now()
@@ -87,6 +87,10 @@ def upload():
     if not FLAGS.container:
         print >>sys.stderr, "Missing --container flags" 
 
+    if not all(FLAGS.account, FLAGS.key, FLAGS.container):
+        print __doc__
+        sys.exit(1)
+
     rewrite_name = FilenameRewriter()
 
     connection = get_connection(FLAGS.account, FLAGS.key)
@@ -95,7 +99,6 @@ def upload():
     except cloudfiles.errors.NoSuchContainer:
         container = connection.create_container(FLAGS.container)
         
-
     for source in argv:
         target = rewrite_name(source)
         print >>sys.stderr, "Uploading", source, "to", target, "expires on", rewrite_name.kill_date
